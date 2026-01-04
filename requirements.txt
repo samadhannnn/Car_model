@@ -1,9 +1,8 @@
 flask
 pandas
 numpy
+scikit-learn
 statsmodels
 scipy
-matplotlib
-seaborn
 openpyxl
-gunicorn
+guni
