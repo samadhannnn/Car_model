@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car MPG Prediction System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-hint {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .result-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .prediction-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .model-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .model-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .coef-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ff4757;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Car MPG Prediction System</h1>
+            <p>Predict fuel efficiency using multilinear regression</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>Input Parameters</h2>
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label for="hp">Horsepower (HP)</label>
+                        <input type="number" id="hp" step="0.1" required>
+                        <div class="input-hint">Engine power in horsepower</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sp">Top Speed (SP)</label>
+                        <input type="number" id="sp" step="0.1" required>
+                        <div class="input-hint">Maximum speed in mph</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vol">Engine Volume (VOL)</label>
+                        <input type="number" id="vol" step="0.1" required>
+                        <div class="input-hint">Engine displacement in cubic inches</div>
+                    </div>
+
+                    <button type="submit" class="btn">Predict MPG</button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px; color: #667eea;">Calculating...</p>
+                </div>
+
+                <div class="error" id="error"></div>
+            </div>
+
+            <div class="card result-card" id="resultCard" style="display: none;">
+                <h3>Predicted Fuel Efficiency</h3>
+                <div class="prediction-value" id="predictionValue">-- MPG</div>
+                <div style="opacity: 0.8; margin-top: 10px;">Miles Per Gallon</div>
+                
+                <div class="stats-grid" style="margin-top: 30px;">
+                    <div class="stat-item">
+                        <div class="stat-label">Horsepower</div>
+                        <div class="stat-value" id="displayHP">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Top Speed</div>
+                        <div class="stat-value" id="displaySP">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Engine Volume</div>
+                        <div class="stat-value" id="displayVOL">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Model R²</div>
+                        <div class="stat-value" id="displayR2">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card model-info">
+            <h3>📊 Model Information</h3>
+            <div class="stats-grid">
+                <div class="stat-item" style="background: white;">
+                    <div class="stat-label" style="color: #666;">R-Squared</div>
+                    <div class="stat-value" style="color: #667eea;" id="r2Value">--</div>
+                </div>
+                <div class="stat-item" style="background: white;">
+                    <div class="stat-label" style="color: #666;">Adj. R-Squared</div>
+                    <div class="stat-value" style="color: #667eea;" id="adjR2Value">--</div>
+                </div>
+                <div class="stat-item" style="background: white;">
+                    <div class="stat-label" style="color: #666;">F-Statistic</div>
+                    <div class="stat-value" style="color: #667eea;" id="fValue">--</div>
+                </div>
+                <div class="stat-item" style="background: white;">
+                    <div class="stat-label" style="color: #666;">AIC</div>
+                    <div class="stat-value" style="color: #667eea;" id="aicValue">--</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 25px;">Regression Coefficients</h3>
+            <div id="coefficients"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load model statistics on page load
+        async function loadModelStats() {
+            try {
+                const response = await fetch('/model-stats');
+                const data = await response.json();
+                
+                document.getElementById('r2Value').textContent = data.r_squared;
+                document.getElementById('adjR2Value').textContent = data.adj_r_squared;
+                document.getElementById('fValue').textContent = data.f_statistic;
+                document.getElementById('aicValue').textContent = data.aic;
+                document.getElementById('displayR2').textContent = data.r_squared;
+                
+                // Display coefficients
+                const coeffDiv = document.getElementById('coefficients');
+                for (const [key, value] of Object.entries(data.coefficients)) {
+                    const coefItem = document.createElement('div');
+                    coefItem.className = 'coef-item';
+                    coefItem.innerHTML = `
+                        <span><strong>${key}</strong></span>
+                        <span>${value}</span>
+                    `;
+                    coeffDiv.appendChild(coefItem);
+                }
+            } catch (error) {
+                console.error('Error loading model stats:', error);
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const hp = parseFloat(document.getElementById('hp').value);
+            const sp = parseFloat(document.getElementById('sp').value);
+            const vol = parseFloat(document.getElementById('vol').value);
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('resultCard').style.display = 'none';
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ hp, sp, vol })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Display results
+                    document.getElementById('predictionValue').textContent = data.prediction + ' MPG';
+                    document.getElementById('displayHP').textContent = data.inputs.HP;
+                    document.getElementById('displaySP').textContent = data.inputs.SP;
+                    document.getElementById('displayVOL').textContent = data.inputs.VOL;
+                    document.getElementById('resultCard').style.display = 'block';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = 'Error: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        // Load stats on page load
+        loadModelStats();
+    </script>
+</body>
+</html>
